@@ -1,0 +1,1 @@
+# eurorust-2025-workshop
