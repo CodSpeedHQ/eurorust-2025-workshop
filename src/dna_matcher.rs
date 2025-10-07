@@ -25,7 +25,7 @@ mod tests {
     fn test_naive_matcher_on_genome_file() {
         // Read the actual genome.fasta file
         let genome = std::fs::read_to_string("genome.fasta")
-            .expect("Failed to read genome.fasta - run generate_fasta first");
+            .expect("Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'");
         let pattern = "AGTCCGTA";
 
         let matches = naive_dna_matcher(&genome, pattern);
@@ -38,6 +38,10 @@ mod tests {
             matches.len()
         );
 
-        println!("✓ Found {} sequences containing pattern '{}'", matches.len(), pattern);
+        println!(
+            "✓ Found {} sequences containing pattern '{}'",
+            matches.len(),
+            pattern
+        );
     }
 }

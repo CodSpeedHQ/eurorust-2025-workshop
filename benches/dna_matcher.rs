@@ -6,7 +6,9 @@ fn main() {
 
 #[divan::bench(sample_count = 3, sample_size = 5)]
 fn dna_matcher() {
-    let genome = std::fs::read_to_string("genome.fasta").expect("Failed to read genome.fasta");
+    let genome = std::fs::read_to_string("genome.fasta").expect(
+        "Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'",
+    );
     let pattern = "AGTCCGTA";
 
     let matches = divan::black_box(naive_dna_matcher(
