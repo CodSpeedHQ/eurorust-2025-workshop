@@ -15,10 +15,11 @@ cargo install cargo-codspeed --locked
 ### Run benchmarks locally
 
 ```sh
-cargo codspeed build
-cargo codspeed run
+# generate the genome file first
+cargo run --release --bin generate_fasta
 ```
 
-## Benchmarks
-
-This repository includes a simple "Hello, World!" benchmark using [divan](https://docs.rs/divan/) via the CodSpeed compatibility layer.
+```sh
+cargo codspeed build -m walltime
+cargo codspeed run
+```
