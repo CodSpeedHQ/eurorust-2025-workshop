@@ -1,0 +1,13 @@
+[package]
+name = "eurorust-2025-workshop"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[dev-dependencies]
+divan = { version = "4.0.2", package = "codspeed-divan-compat" }
+
+[[bench]]
+name = "hello_world"
+harness = false
