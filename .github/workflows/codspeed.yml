@@ -10,7 +10,16 @@ on:
 jobs:
   benchmarks:
     name: Run benchmarks
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            mode: instrumentation
+            bench: [hello_world]
+          - runner: codspeed-macro
+            mode: walltime
+            bench: [dna_matcher]
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain, cache and cargo-codspeed
@@ -19,11 +28,14 @@ jobs:
           channel: stable
           cache-target: release
           bins: cargo-codspeed
+      - name: Generate genome.fasta for dna_matcher
+        if: contains(matrix.bench, 'dna_matcher')
+        run: cargo run --bin generate_fasta --release
       - name: Build benchmark target(s)
-        run: cargo codspeed build
+        run: cargo codspeed build ${{ format('--bench {0}', join(matrix.bench, ' --bench ')) }}
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v4
         with:
-          mode: instrumentation
+          mode: ${{ matrix.mode }}
           run: cargo codspeed run
           token: ${{ secrets.CODSPEED_TOKEN }}

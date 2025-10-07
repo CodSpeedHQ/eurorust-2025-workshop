@@ -3,11 +3,24 @@ name = "eurorust-2025-workshop"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "eurorust_2025_workshop"
+path = "src/lib.rs"
+
 [dependencies]
+rand = "0.8"
 
 [dev-dependencies]
 divan = { version = "4.0.2", package = "codspeed-divan-compat" }
 
+[[bin]]
+name = "generate_fasta"
+path = "bin/generate_fasta.rs"
+
 [[bench]]
 name = "hello_world"
+harness = false
+
+[[bench]]
+name = "dna_matcher"
 harness = false
