@@ -92,10 +92,7 @@ mod tests {
             "Middle corruption offset"
         );
         assert_eq!(corruptions[25].length, 4096, "Middle corruption length");
-        assert_eq!(
-            corruptions[49].offset, 507871232,
-            "Last corruption offset"
-        );
+        assert_eq!(corruptions[49].offset, 507871232, "Last corruption offset");
         assert_eq!(corruptions[49].length, 5120, "Last corruption length");
     }
 }
