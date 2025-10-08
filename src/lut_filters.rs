@@ -18,11 +18,11 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
 pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
-    naive::apply_brightness_contrast(img, brightness, contrast)
+    saul::apply_brightness_contrast(img, brightness, contrast)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
-    naive::apply_gamma(img, gamma)
+    saul::apply_gamma(img, gamma)
 }
 
 pub fn apply_brightness_contrast_gamma(
@@ -32,7 +32,62 @@ pub fn apply_brightness_contrast_gamma(
     gamma: f32,
 ) -> RgbImage {
     let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    saul::apply_gamma(&temp_img, gamma)
+}
+
+mod saul {
+    use super::*;
+
+    fn create_brightness_contrast_lut(brightness: i16, contrast: f32) -> [u8; 256] {
+        let mut ret = [0; 256];
+        for r in 0..=u8::MAX {
+            let r_float = r as f32;
+            let value = ((r_float - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
+            ret[r as usize] = value.clamp(0.0, 255.0) as u8;
+        }
+        ret
+    }
+
+    /// Apply brightness and contrast with floating-point math per pixel
+    pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+        let lut = create_brightness_contrast_lut(brightness, contrast);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = pixel[0] as usize;
+            let g = pixel[1] as usize;
+            let b = pixel[2] as usize;
+            output.put_pixel(x, y, Rgb([lut[r], lut[g], lut[b]]));
+        }
+
+        output
+    }
+
+    fn create_gamma_lut(gamma: f32) -> [u8; 256] {
+        let mut ret = [0; 256];
+        for r in 0..=u8::MAX {
+            let value = (r as f32 / 255.0).powf(1.0 / gamma) * 255.0;
+            ret[r as usize] = value as u8;
+        }
+        ret
+    }
+
+    pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+        let lut = create_gamma_lut(gamma);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
+        }
+
+        output
+    }
 }
 
 mod naive {
