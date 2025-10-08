@@ -1,11 +1,11 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
 pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
-    naive::apply_brightness_contrast(img, brightness, contrast)
+    optimized::apply_brightness_contrast(img, brightness, contrast)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
-    naive::apply_gamma(img, gamma)
+    optimized::apply_gamma(img, gamma)
 }
 
 pub fn apply_brightness_contrast_gamma(
@@ -14,10 +14,10 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    optimized::apply_brightness_contrast_gamma(img, brightness, contrast, gamma)
 }
 
+#[allow(dead_code)]
 mod naive {
     use super::*;
 
@@ -66,6 +66,70 @@ mod naive {
         }
 
         output
+    }
+}
+
+mod optimized {
+    use super::*;
+
+    use std::simd::num::SimdUint;
+    use std::simd::{Simd, u8x16, usizex16};
+
+    pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
+        let lut: [u8; 256] = std::array::from_fn(|x| {
+            (((x as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32).clamp(0.0, 255.0)
+                as u8
+        });
+
+        apply_lut(img, &lut)
+    }
+
+    pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
+        let lut: [u8; 256] =
+            std::array::from_fn(|x| ((x as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8);
+
+        apply_lut(img, &lut)
+    }
+
+    pub fn apply_brightness_contrast_gamma(
+        img: &RgbImage,
+        brightness: i16,
+        contrast: f32,
+        gamma: f32,
+    ) -> RgbImage {
+        let lut: [u8; 256] = std::array::from_fn(|x| {
+            let brightness_contrast =
+                (((x as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32)
+                    .clamp(0.0, 255.0) as u8;
+            ((brightness_contrast as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8
+        });
+
+        apply_lut(img, &lut)
+    }
+
+    fn apply_lut(img: &RgbImage, lut: &[u8; 256]) -> RgbImage {
+        let (width, height) = img.dimensions();
+
+        let input = img.as_raw();
+        let mut output = vec![0u8; input.len()];
+
+        // Process 16 bytes at a time
+        let chunks = input.chunks_exact(16);
+        let remainder = chunks.remainder();
+
+        for (i, chunk) in chunks.enumerate() {
+            let pixels = u8x16::from_slice(chunk);
+            let indices: usizex16 = pixels.cast();
+            let result: u8x16 = Simd::gather_or_default(lut, indices);
+            result.copy_to_slice(&mut output[i * 16..(i + 1) * 16]);
+        }
+
+        // Handle remaining bytes
+        for (i, &byte) in remainder.iter().enumerate() {
+            output[input.len() - remainder.len() + i] = lut[byte as usize];
+        }
+
+        ImageBuffer::from_raw(width, height, output).unwrap()
     }
 }
 
