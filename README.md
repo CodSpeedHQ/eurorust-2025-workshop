@@ -1,5 +1,8 @@
 # EuroRust 2025 Workshop
 
+
+Jonas Hahn 
+
 A template repository for learning Rust performance measurement with [CodSpeed](https://codspeed.io/).
 
 ## Getting Started
