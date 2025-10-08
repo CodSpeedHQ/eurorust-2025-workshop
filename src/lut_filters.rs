@@ -22,7 +22,7 @@ pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
-    naive::apply_gamma(img, gamma)
+    saul::apply_gamma(img, gamma)
 }
 
 pub fn apply_brightness_contrast_gamma(
