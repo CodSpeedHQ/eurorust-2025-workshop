@@ -1,4 +1,5 @@
 use memmap2::Mmap;
+use rayon::prelude::*;
 use std::fs::File;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +15,7 @@ pub fn find_corruptions_sequential(
     corrupted_path: &str,
     chunk_size: usize,
 ) -> Vec<Corruption> {
-    // Memory-map both files for efficient sequential access
+    // Memory-map both files for efficient parallel access
     let ref_file = File::open(reference_path).unwrap();
     let corrupt_file = File::open(corrupted_path).unwrap();
 
@@ -24,33 +25,58 @@ pub fn find_corruptions_sequential(
     let ref_data = &ref_mmap[..];
     let corrupt_data = &corrupt_mmap[..];
 
-    let mut corruptions: Vec<Corruption> = Vec::new();
-    let mut offset = 0u64;
+    // Use large work units (10MB) to minimize parallelization overhead
+    let work_unit_size = chunk_size * 10240; // 10MB chunks
 
-    // Process chunks sequentially
-    for (ref_chunk, corrupt_chunk) in ref_data.chunks(chunk_size).zip(corrupt_data.chunks(chunk_size)) {
-        if ref_chunk != corrupt_chunk {
+    // Process in parallel with large work units
+    let all_corruptions: Vec<Vec<Corruption>> = ref_data
+        .par_chunks(work_unit_size)
+        .zip(corrupt_data.par_chunks(work_unit_size))
+        .enumerate()
+        .map(|(work_idx, (ref_work, corrupt_work))| {
+            let base_offset = (work_idx * work_unit_size) as u64;
+            let mut local_corruptions: Vec<Corruption> = Vec::new();
+
+            // Process chunks sequentially within this work unit
+            for (chunk_offset, (ref_chunk, corrupt_chunk)) in ref_work
+                .chunks(chunk_size)
+                .zip(corrupt_work.chunks(chunk_size))
+                .enumerate()
+            {
+                if ref_chunk != corrupt_chunk {
+                    let offset = base_offset + (chunk_offset * chunk_size) as u64;
+                    let length = ref_chunk.len() as u64;
+
+                    if let Some(last) = local_corruptions.last_mut() {
+                        if last.offset + last.length == offset {
+                            last.length += length;
+                        } else {
+                            local_corruptions.push(Corruption { offset, length });
+                        }
+                    } else {
+                        local_corruptions.push(Corruption { offset, length });
+                    }
+                }
+            }
+
+            local_corruptions
+        })
+        .collect();
+
+    // Merge results from all work units
+    let mut corruptions: Vec<Corruption> = Vec::new();
+    for local_corruptions in all_corruptions {
+        for corruption in local_corruptions {
             if let Some(last) = corruptions.last_mut() {
-                if last.offset + last.length == offset {
-                    // Extend the previous corruption
-                    last.length += ref_chunk.len() as u64;
+                if last.offset + last.length == corruption.offset {
+                    last.length += corruption.length;
                 } else {
-                    // New corruption
-                    corruptions.push(Corruption {
-                        offset,
-                        length: ref_chunk.len() as u64,
-                    });
+                    corruptions.push(corruption);
                 }
             } else {
-                // First corruption
-                corruptions.push(Corruption {
-                    offset,
-                    length: ref_chunk.len() as u64,
-                });
+                corruptions.push(corruption);
             }
         }
-
-        offset += ref_chunk.len() as u64;
     }
 
     corruptions

@@ -433,6 +433,7 @@ dependencies = [
  "image-compare",
  "memmap2",
  "rand",
+ "rayon",
 ]
 
 [[package]]

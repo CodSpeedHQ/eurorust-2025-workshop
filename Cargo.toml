@@ -13,6 +13,7 @@ image = "0.25"
 image-compare = "0.5.0"
 arraydeque = "0.5.1"
 memmap2 = "0.9.8"
+rayon = "1.11.0"
 
 [dev-dependencies]
 divan = { version = "4.0.2", package = "codspeed-divan-compat" }
