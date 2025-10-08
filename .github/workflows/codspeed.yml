@@ -40,7 +40,7 @@ jobs:
       - name: Setup rust toolchain, cache and cargo-codspeed
         uses: moonrepo/setup-rust@v1
         with:
-          channel: stable
+          channel: nightly
           cache-target: release
           bins: cargo-codspeed
       - name: Generate genome.fasta for dna_matcher
