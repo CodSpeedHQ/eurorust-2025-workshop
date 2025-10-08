@@ -14,21 +14,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-latest
-            mode: instrumentation
-            bench: [hello_world, bfs]
           - runner: codspeed-macro
             mode: walltime
-            bench:
-              [
-                dna_matcher,
-                lut_grayscale_bench,
-                lut_filters_bench,
-                simd_brightness_bench,
-                simd_filters_bench,
-                blob_corruption_checker,
-                blob_corruption_checker,
-              ]
+            bench: [dna_matcher]
     steps:
       - uses: actions/checkout@v4
         with:
