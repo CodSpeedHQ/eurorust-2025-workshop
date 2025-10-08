@@ -100,10 +100,11 @@ pub fn find_corruptions_parallel(
         if is_corrupted {
             let chunk_len = ((offset + chunk_size).min(file_len) - offset) as u64;
 
-            if let Some(ref mut corruption) = current_corruption {
+            if let Some(mut corruption) = current_corruption.take() {
                 if corruption.offset + corruption.length == offset as u64 {
                     // Extend existing corruption
                     corruption.length += chunk_len;
+                    current_corruption = Some(corruption);
                 } else {
                     // Push previous and start new
                     corruptions.push(corruption.clone());
