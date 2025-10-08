@@ -77,11 +77,16 @@ mod naive {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
+        let mut gamma_table = [0u8; 256];
+        for i in 0..250 {
+            gamma_table[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8;
+        }
+
         for (x, y, pixel) in img.enumerate_pixels() {
             // powf() is VERY expensive - this is why we need a LUT!
-            let r = (pixel[0] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let g = (pixel[1] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let b = (pixel[2] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
+            let r = gamma_table[pixel[0] as usize];
+            let g = gamma_table[pixel[1] as usize];
+            let b = gamma_table[pixel[2] as usize];
 
             output.put_pixel(x, y, Rgb([r as u8, g as u8, b as u8]));
         }
