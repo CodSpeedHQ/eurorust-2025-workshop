@@ -1,5 +1,6 @@
+use memmap2::Mmap;
+use rayon::prelude::*;
 use std::fs::File;
-use std::io::{BufReader, Read};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Corruption {
@@ -14,47 +15,68 @@ pub fn find_corruptions_sequential(
     corrupted_path: &str,
     chunk_size: usize,
 ) -> Vec<Corruption> {
-    let mut ref_file = BufReader::new(File::open(reference_path).unwrap());
-    let mut corrupt_file = BufReader::new(File::open(corrupted_path).unwrap());
+    // Memory-map both files for efficient parallel access
+    let ref_file = File::open(reference_path).unwrap();
+    let corrupt_file = File::open(corrupted_path).unwrap();
 
-    let mut ref_buffer = vec![0u8; chunk_size];
-    let mut corrupt_buffer = vec![0u8; chunk_size];
+    let ref_mmap = unsafe { Mmap::map(&ref_file).unwrap() };
+    let corrupt_mmap = unsafe { Mmap::map(&corrupt_file).unwrap() };
 
+    let ref_data = &ref_mmap[..];
+    let corrupt_data = &corrupt_mmap[..];
+
+    // Use large work units (10MB) to minimize parallelization overhead
+    let work_unit_size = chunk_size * 10240; // 10MB chunks
+
+    // Process in parallel with large work units
+    let all_corruptions: Vec<Vec<Corruption>> = ref_data
+        .par_chunks(work_unit_size)
+        .zip(corrupt_data.par_chunks(work_unit_size))
+        .enumerate()
+        .map(|(work_idx, (ref_work, corrupt_work))| {
+            let base_offset = (work_idx * work_unit_size) as u64;
+            let mut local_corruptions: Vec<Corruption> = Vec::new();
+
+            // Process chunks sequentially within this work unit
+            for (chunk_offset, (ref_chunk, corrupt_chunk)) in ref_work
+                .chunks(chunk_size)
+                .zip(corrupt_work.chunks(chunk_size))
+                .enumerate()
+            {
+                if ref_chunk != corrupt_chunk {
+                    let offset = base_offset + (chunk_offset * chunk_size) as u64;
+                    let length = ref_chunk.len() as u64;
+
+                    if let Some(last) = local_corruptions.last_mut() {
+                        if last.offset + last.length == offset {
+                            last.length += length;
+                        } else {
+                            local_corruptions.push(Corruption { offset, length });
+                        }
+                    } else {
+                        local_corruptions.push(Corruption { offset, length });
+                    }
+                }
+            }
+
+            local_corruptions
+        })
+        .collect();
+
+    // Merge results from all work units
     let mut corruptions: Vec<Corruption> = Vec::new();
-    let mut offset = 0u64;
-
-    loop {
-        let n = ref_file.read(&mut ref_buffer).unwrap();
-        if n == 0 {
-            break;
-        }
-
-        corrupt_file.read_exact(&mut corrupt_buffer[..n]).unwrap();
-
-        // Compare byte by byte and track consecutive corrupted chunks
-        if ref_buffer[..n] != corrupt_buffer[..n] {
-            // Check if this continues the previous corruption
+    for local_corruptions in all_corruptions {
+        for corruption in local_corruptions {
             if let Some(last) = corruptions.last_mut() {
-                if last.offset + last.length == offset {
-                    // Extend the previous corruption
-                    last.length += n as u64;
+                if last.offset + last.length == corruption.offset {
+                    last.length += corruption.length;
                 } else {
-                    // New corruption
-                    corruptions.push(Corruption {
-                        offset,
-                        length: n as u64,
-                    });
+                    corruptions.push(corruption);
                 }
             } else {
-                // First corruption
-                corruptions.push(Corruption {
-                    offset,
-                    length: n as u64,
-                });
+                corruptions.push(corruption);
             }
         }
-
-        offset += n as u64;
     }
 
     corruptions
