@@ -440,6 +440,7 @@ dependencies = [
  "codspeed-divan-compat",
  "image",
  "image-compare",
+ "itertools 0.14.0",
  "rand",
 ]
 
