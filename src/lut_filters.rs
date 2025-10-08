@@ -31,8 +31,7 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    optimized::apply_gamma(&temp_img, gamma)
+    optimized::apply_brightness_contrast_gamma(img, brightness, contrast, gamma)
 }
 
 #[allow(dead_code)]
@@ -119,6 +118,33 @@ mod optimized {
 
         let lut: [u8; 256] =
             std::array::from_fn(|x| ((x as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
+        }
+
+        output
+    }
+
+    pub fn apply_brightness_contrast_gamma(
+        img: &RgbImage,
+        brightness: i16,
+        contrast: f32,
+        gamma: f32,
+    ) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        let lut: [u8; 256] = std::array::from_fn(|x| {
+            let brightness_contrast =
+                (((x as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32)
+                    .clamp(0.0, 255.0) as u8;
+            ((brightness_contrast as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8
+        });
 
         for (x, y, pixel) in img.enumerate_pixels() {
             let r = lut[pixel[0] as usize];
