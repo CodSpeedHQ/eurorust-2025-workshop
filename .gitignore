@@ -28,3 +28,6 @@ target
 # Generated benchmark data file
 genome.fasta
 *.bin
+
+*.jpg
+*.png

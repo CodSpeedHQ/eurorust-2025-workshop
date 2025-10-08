@@ -26,6 +26,9 @@ jobs:
             bench: [dna_matcher, blob_corruption_checker]
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
+      
       - name: Setup rust toolchain, cache and cargo-codspeed
         uses: moonrepo/setup-rust@v1
         with:
