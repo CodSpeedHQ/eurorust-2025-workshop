@@ -55,21 +55,35 @@ mod naive {
         apply_lut(img, &lut)
     }
 
-    pub fn apply_lut(img: &RgbImage, lut: &[u8; 256]) -> RgbImage {
-        let (width, height) = img.dimensions();
-        let mut output = ImageBuffer::new(width, height);
+    // pub fn apply_lut(img: &RgbImage, lut: &[u8; 256]) -> RgbImage {
+    //     let (width, height) = img.dimensions();
+    //     let mut output = ImageBuffer::new(width, height);
 
-        for (x, y, pixel) in img.enumerate_pixels() {
-            output.put_pixel(
-                x,
-                y,
-                Rgb([
-                    lut[pixel[0] as usize],
-                    lut[pixel[1] as usize],
-                    lut[pixel[2] as usize],
-                ]),
-            );
-        }
+    //     for (x, y, pixel) in img.enumerate_pixels() {
+    //         output.put_pixel(
+    //             x,
+    //             y,
+    //             Rgb([
+    //                 lut[pixel[0] as usize],
+    //                 lut[pixel[1] as usize],
+    //                 lut[pixel[2] as usize],
+    //             ]),
+    //         );
+    //     }
+
+    //     output
+    // }
+
+    pub fn apply_lut(img: &RgbImage, lut: &[u8; 256]) -> RgbImage {
+        let mut output = img.clone();
+
+        output.enumerate_pixels_mut().for_each(|(_, _, pixel)| {
+            *pixel = Rgb([
+                lut[pixel[0] as usize],
+                lut[pixel[1] as usize],
+                lut[pixel[2] as usize],
+            ]);
+        });
 
         output
     }
