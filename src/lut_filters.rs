@@ -31,8 +31,28 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    let (width, height) = img.dimensions();
+    let mut output = ImageBuffer::new(width, height);
+
+    // precompute two lookup tables at once
+    let mut brightness_table = [0u8; 256]; // pixels are u8 (0-255)
+    let mut gamma_table = [0u8; 256]; // pixels are u8 (0-255)
+
+    for i in 0..256 {
+        brightness_table[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32).clamp(0.0, 255.0) as u8;
+        gamma_table[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0).clamp(0.0, 255.0) as u8;
+    }
+
+    // apply first the brightness/contrast, then gamma
+    for (x, y, pixel) in img.enumerate_pixels() {
+        let r = gamma_table[brightness_table[pixel[0] as usize] as usize] as u8;
+        let g = gamma_table[brightness_table[pixel[1] as usize] as usize] as u8;
+        let b = gamma_table[brightness_table[pixel[2] as usize] as usize] as u8;
+
+        output.put_pixel(x, y, Rgb([r, g, b]));
+    }
+
+    output
 }
 
 mod naive {
