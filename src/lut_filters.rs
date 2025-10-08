@@ -53,15 +53,20 @@ mod naive {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
+        let mut lut: [f32; 256] = [0.0; 256];
+        for i in 0..256 {
+            lut[i] = (LUT1[i] * (1.0 + contrast)) + 128.0 + brightness as f32
+        }
+
         for (x, y, pixel) in img.enumerate_pixels() {
             let r = pixel[0];
             let g = pixel[1];
             let b = pixel[2];
 
             // Apply contrast and brightness (5 FP ops per channel!)
-            let r = (LUT1[r as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let g = (LUT1[g as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let b = (LUT1[b as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
+            let r = lut[r as usize];
+            let g = lut[g as usize];
+            let b = lut[b as usize];
 
             output.put_pixel(
                 x,
