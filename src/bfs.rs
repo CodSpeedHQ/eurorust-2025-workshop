@@ -28,7 +28,7 @@ impl Graph {
 pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new(); // Using VecDeque for efficient FIFO queue
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(graph.num_nodes());
 
     queue.push_back(start);
     visited.insert(start);
