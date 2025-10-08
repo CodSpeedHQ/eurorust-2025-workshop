@@ -1,9 +1,13 @@
+use boyer_moore_magiclen::BMByte;
+use rayon::prelude::*;
+
 /// Naive approach: Read the entire file as a string and filter lines
 pub fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
+    let bmb = BMByte::from(pattern).unwrap();
     genome
-        .lines()
+        .par_lines()
         .filter(|line| !line.starts_with('>')) // Skip headers
-        .filter(|line| line.contains(pattern))
+        .filter(|line| !bmb.find_in(line, 1).is_empty())
         .map(|s| s.to_string())
         .collect()
 }

@@ -138,6 +138,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6099cdc01846bc367c4e7dd630dc5966dccf36b652fae7a74e17b640411a91b2"
 
 [[package]]
+name = "boyer-moore-magiclen"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95e6233f2d926b5b123caf9d58e3885885255567fbe7776a7fdcae2a4d7241c4"
+dependencies = [
+ "debug-helper",
+]
+
+[[package]]
 name = "built"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,6 +374,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
+name = "debug-helper"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f578e8e2c440e7297e008bb5486a3a8a194775224bbc23729b0dbdfaeebf162e"
+
+[[package]]
 name = "divan-macros"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -421,10 +436,12 @@ dependencies = [
 name = "eurorust-2025-workshop"
 version = "0.1.0"
 dependencies = [
+ "boyer-moore-magiclen",
  "codspeed-divan-compat",
  "image",
  "image-compare",
  "rand",
+ "rayon",
 ]
 
 [[package]]

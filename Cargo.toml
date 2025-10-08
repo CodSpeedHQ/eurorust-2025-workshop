@@ -11,6 +11,8 @@ path = "src/lib.rs"
 rand = "0.8"
 image = "0.25"
 image-compare = "0.5.0"
+rayon = "1.8.0"
+boyer-moore-magiclen = "0.2.20"
 
 [dev-dependencies]
 divan = { version = "4.0.2", package = "codspeed-divan-compat" }
