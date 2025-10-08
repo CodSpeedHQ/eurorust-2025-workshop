@@ -5,7 +5,7 @@ fn main() {
 }
 
 #[divan::bench(sample_count = 2, sample_size = 3)]
-fn dna_matcher() {
+fn dna_matcher_old() {
     let genome = std::fs::read_to_string("genome.fasta").expect(
         "Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'",
     );
@@ -63,7 +63,7 @@ fn dna_matcher_mmap() {
 }
 
 #[divan::bench(sample_count = 2, sample_size = 3)]
-fn dna_matcher_mmap_parallel() {
+fn dna_matcher() {
     let file = std::fs::File::open("genome.fasta").expect(
         "Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'",
     );
