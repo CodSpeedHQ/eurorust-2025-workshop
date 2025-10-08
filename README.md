@@ -33,4 +33,5 @@ cargo codspeed build -m walltime
 cargo codspeed run -m walltime
 ```
 
+
 Note: You can also set the `CODSPEED_RUNNER_MODE` environment variable to `walltime` to avoid passing `-m walltime` every time.
