@@ -1,5 +1,5 @@
 pub fn dna_matcher_api(genome: &str, pattern: &str) -> Vec<String> {
-    optimized_dna_matcher_impl(genome, pattern)
+    optimized_dna_matcher_impl(genome.as_bytes(), pattern.as_bytes())
 }
 
 /// Naive approach: Read the entire file as a string and filter lines
@@ -38,7 +38,8 @@ fn itertools_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
         .collect()
 }
 
-fn optimized_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
+#[allow(dead_code)]
+fn rayon_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
     use rayon::prelude::*;
 
     genome
@@ -46,6 +47,20 @@ fn optimized_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
         .filter(|line| !line.starts_with('>')) // Skip headers
         .filter(|line| line.contains(pattern))
         .map(|s| s.to_string())
+        .collect()
+}
+
+fn optimized_dna_matcher_impl(genome: &[u8], pattern: &[u8]) -> Vec<String> {
+    use memchr::memmem;
+    use rayon::prelude::*;
+
+    let finder = memmem::Finder::new(pattern);
+
+    genome
+        .par_split(|&c| c == b'\n')
+        .filter(|line| line.first().map_or(false, |&c| c != b'>')) // Skip headers and empty lines
+        .filter(|line| finder.find(line).is_some())
+        .map(|s| std::str::from_utf8(s).unwrap().to_string())
         .collect()
 }
 
