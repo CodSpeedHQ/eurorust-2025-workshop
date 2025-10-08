@@ -1,5 +1,5 @@
-pub fn dna_matcher_api(genome: &str, pattern: &str) -> Vec<String> {
-    optimized_dna_matcher_impl(genome.as_bytes(), pattern.as_bytes())
+pub fn dna_matcher_api(genome: &[u8], pattern: &str) -> Vec<String> {
+    optimized_dna_matcher_impl(genome, pattern.as_bytes())
 }
 
 /// Naive approach: Read the entire file as a string and filter lines
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_matcher() {
-        let test_genome = ">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
+        let test_genome = b">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
         let pattern = "AGTCCGTA";
         let matches = dna_matcher_api(test_genome, pattern);
         assert_eq!(matches.len(), 1);
@@ -84,7 +84,7 @@ mod tests {
             .expect("Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'");
         let pattern = "AGTCCGTA";
 
-        let matches = dna_matcher_api(&genome, pattern);
+        let matches = dna_matcher_api(genome.as_bytes(), pattern);
 
         // With fixed seed (42), we should always get exactly 4927 matches
         assert_eq!(
