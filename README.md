@@ -17,7 +17,7 @@ cargo install cargo-codspeed --locked
 ```sh
 # generate the reference files
 cargo run --release --bin generate_fasta
-cargo run --release --bin benchmark_blobs
+cargo run --release --bin generate_blobs
 ```
 
 Running with `divan`:
