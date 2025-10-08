@@ -20,7 +20,7 @@ jobs:
         include:
           - runner: ubuntu-latest
             mode: instrumentation
-            bench: [hello_world, bfs]
+            bench: [hello_world, bfs, lut_grayscale_bench, lut_filters_bench]
           - runner: codspeed-macro
             mode: walltime
             bench: [dna_matcher, blob_corruption_checker]
