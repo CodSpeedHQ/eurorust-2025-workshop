@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 /// A simple graph represented as an adjacency list
 #[derive(Debug, Clone)]
@@ -25,23 +25,23 @@ impl Graph {
 
 /// Naive BFS implementation using Vec as a queue (intentionally slow)
 /// Returns the order in which nodes were visited
-pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
+pub fn bfs_naive(graph: &Graph, start: usize) -> VecDeque<usize> {
     let mut visited = HashSet::new();
-    let mut queue = Vec::new(); // Using Vec instead of VecDeque - intentionally inefficient!
-    let mut result = Vec::new();
+    let mut queue = VecDeque::new(); // Using Vec instead of VecDeque - intentionally inefficient!
+    let mut result = VecDeque::new();
 
-    queue.push(start);
+    queue.push_back(start);
     visited.insert(start);
 
     while !queue.is_empty() {
         // remove(0) is O(n) - this makes BFS slow!
-        let node = queue.remove(0);
-        result.push(node);
+        let node = queue.pop_front().unwrap();
+        result.push_back(node);
 
         if let Some(neighbors) = graph.adjacency.get(node) {
             for &neighbor in neighbors {
                 if visited.insert(neighbor) {
-                    queue.push(neighbor);
+                    queue.push_back(neighbor);
                 }
             }
         }
