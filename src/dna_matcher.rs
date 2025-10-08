@@ -1,4 +1,6 @@
+use itertools::Itertools;
 use jetscii::{ByteSubstring, bytes};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 /// Naive approach: Read the entire file as a string and filter lines
 pub fn naive_dna_matcher<'a>(genome: &'a str, pattern: &'a str) -> Vec<&'a str> {
@@ -7,6 +9,8 @@ pub fn naive_dna_matcher<'a>(genome: &'a str, pattern: &'a str) -> Vec<&'a str> 
     let searcher = ByteSubstring::new(pattern);
     split_lines(genome)
         .into_iter()
+        .collect_vec()
+        .par_iter()
         .filter(|line| line.first() != Some(&b'>'))
         .filter(|line| searcher.find(line).is_some())
         .map(|s| unsafe { str::from_utf8_unchecked(s) })
