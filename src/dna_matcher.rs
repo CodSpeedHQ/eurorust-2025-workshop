@@ -1,11 +1,22 @@
 /// Naive approach: Read the entire file as a string and filter lines
-pub fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
-    genome
-        .lines()
-        .filter(|line| !line.starts_with('>')) // Skip headers
-        .filter(|line| line.contains(pattern))
-        .map(|s| s.to_string())
-        .collect()
+pub fn naive_dna_matcher<'a>(genome: &'a str, pattern: &str) -> Vec<&'a str> {
+    let matcher = jetscii::Substring::new(pattern);
+    let n_matcher = jetscii::Substring::new("\n");
+    let mut position = 0;
+    let mut indices = vec![];
+    let indices = loop {
+        let Some(idx) = matcher.find(&genome[position..]) else {
+            // println!("done {indices:?}");
+            break indices;
+        };
+        let mut newline = memchr::Memchr::new(b'\n', genome[position..position+idx].as_bytes());
+        let start = newline.next_back().unwrap_or_default();
+        let end = n_matcher.find(&genome[position+idx..]).unwrap_or_else(|| genome.len());
+        // println!("Found match at {}-{}, idx {}, pos {}, start {}, end {}", position + start, position + end, idx, position, start, end);
+        indices.push((position + start + 1, position + idx + end));
+        position += idx + end;
+    };
+    indices.iter().map(|&(start, end)| &genome[start..end]).collect()
 }
 
 #[cfg(test)]
@@ -17,6 +28,7 @@ mod tests {
         let test_genome = ">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
         let pattern = "AGTCCGTA";
         let matches = naive_dna_matcher(test_genome, pattern);
+        // println!("{:?}", matches);
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0], "AGTCCGTAAA");
     }
@@ -29,6 +41,7 @@ mod tests {
         let pattern = "AGTCCGTA";
 
         let matches = naive_dna_matcher(&genome, pattern);
+        // println!("{:?}", matches);
 
         // With fixed seed (42), we should always get exactly 4927 matches
         assert_eq!(

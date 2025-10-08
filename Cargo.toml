@@ -12,6 +12,8 @@ rand = "0.8"
 image = "0.25"
 image-compare = "0.5.0"
 fnv = "1.0.7"
+jetscii = { version = "0.5.3", features = [] }
+memchr = "2.7.6"
 
 [dev-dependencies]
 divan = { version = "4.0.2", package = "codspeed-divan-compat" }
