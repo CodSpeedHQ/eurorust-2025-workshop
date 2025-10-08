@@ -106,21 +106,25 @@ pub fn find_corruptions_parallel(
         return all_corruptions;
     }
 
-    // Sort by offset (should already be sorted, but ensure it)
-    all_corruptions.sort_by_key(|c| c.offset);
+    // par_iter() on ranges maintains order, but sort anyway for safety with unstable_sort (faster)
+    all_corruptions.sort_unstable_by_key(|c| c.offset);
 
-    let mut merged: Vec<Corruption> = Vec::new();
-    merged.push(all_corruptions[0].clone());
+    // Pre-allocate with estimated capacity to reduce reallocations
+    let mut merged: Vec<Corruption> = Vec::with_capacity(all_corruptions.len());
 
-    for corruption in all_corruptions.into_iter().skip(1) {
-        let last = merged.last_mut().unwrap();
-        if last.offset + last.length == corruption.offset {
+    let mut iter = all_corruptions.into_iter();
+    let mut current = iter.next().unwrap();
+
+    for corruption in iter {
+        if current.offset + current.length == corruption.offset {
             // Merge consecutive corruptions
-            last.length += corruption.length;
+            current.length += corruption.length;
         } else {
-            merged.push(corruption);
+            merged.push(current);
+            current = corruption;
         }
     }
+    merged.push(current);
 
     merged
 }
