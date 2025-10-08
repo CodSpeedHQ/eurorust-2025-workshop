@@ -28,9 +28,11 @@ impl Graph {
 /// Naive BFS implementation using VecDeque
 /// Returns the order in which nodes were visited
 pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
-    let mut visited = HashSet::new();
-    let mut queue = VecDeque::new();
-    let mut result = Vec::new();
+    let n_nodes = graph.num_nodes();
+
+    let mut visited = HashSet::with_capacity(n_nodes);
+    let mut queue = VecDeque::with_capacity(n_nodes);
+    let mut result = Vec::with_capacity(n_nodes);
 
     queue.push_back(start);
     visited.insert(start);
