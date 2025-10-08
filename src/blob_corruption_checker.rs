@@ -80,53 +80,65 @@ pub fn find_corruptions_parallel(
     // Divide the file into chunks and process in parallel
     let num_chunks = (file_size + chunk_size - 1) / chunk_size;
 
-    let mut all_corruptions: Vec<Corruption> = (0..num_chunks)
+    // Use fold/reduce pattern to stream and merge results
+    let corruptions = (0..num_chunks)
         .into_par_iter()
-        .filter_map(|chunk_idx| {
-            let offset = chunk_idx * chunk_size;
-            let end = std::cmp::min(offset + chunk_size, file_size);
-            let len = end - offset;
+        .fold(
+            Vec::new,
+            |mut acc: Vec<Corruption>, chunk_idx| {
+                let offset = chunk_idx * chunk_size;
+                let end = std::cmp::min(offset + chunk_size, file_size);
+                let len = end - offset;
 
-            let ref_chunk = &ref_mmap[offset..end];
-            let corrupt_chunk = &corrupt_mmap[offset..end];
+                let ref_chunk = &ref_mmap[offset..end];
+                let corrupt_chunk = &corrupt_mmap[offset..end];
 
-            if ref_chunk != corrupt_chunk {
-                Some(Corruption {
-                    offset: offset as u64,
-                    length: len as u64,
-                })
-            } else {
-                None
+                if ref_chunk != corrupt_chunk {
+                    let corruption = Corruption {
+                        offset: offset as u64,
+                        length: len as u64,
+                    };
+
+                    // Try to merge with the last corruption in this thread's accumulator
+                    if let Some(last) = acc.last_mut() {
+                        if last.offset + last.length == corruption.offset {
+                            last.length += corruption.length;
+                        } else {
+                            acc.push(corruption);
+                        }
+                    } else {
+                        acc.push(corruption);
+                    }
+                }
+
+                acc
+            },
+        )
+        .reduce(Vec::new, |mut a, b| {
+            // Merge two vectors of corruptions
+            if a.is_empty() {
+                return b;
             }
-        })
-        .collect();
+            if b.is_empty() {
+                return a;
+            }
 
-    // Merge consecutive corruptions
-    if all_corruptions.is_empty() {
-        return all_corruptions;
-    }
+            // Check if we can merge the last of 'a' with the first of 'b'
+            let last_a = a.last_mut().unwrap();
+            let mut b_iter = b.into_iter();
+            let first_b = b_iter.next().unwrap();
 
-    // par_iter() on ranges maintains order, but sort anyway for safety with unstable_sort (faster)
-    all_corruptions.sort_unstable_by_key(|c| c.offset);
+            if last_a.offset + last_a.length == first_b.offset {
+                last_a.length += first_b.length;
+            } else {
+                a.push(first_b);
+            }
 
-    // Pre-allocate with estimated capacity to reduce reallocations
-    let mut merged: Vec<Corruption> = Vec::with_capacity(all_corruptions.len());
+            a.extend(b_iter);
+            a
+        });
 
-    let mut iter = all_corruptions.into_iter();
-    let mut current = iter.next().unwrap();
-
-    for corruption in iter {
-        if current.offset + current.length == corruption.offset {
-            // Merge consecutive corruptions
-            current.length += corruption.length;
-        } else {
-            merged.push(current);
-            current = corruption;
-        }
-    }
-    merged.push(current);
-
-    merged
+    corruptions
 }
 
 #[cfg(test)]
