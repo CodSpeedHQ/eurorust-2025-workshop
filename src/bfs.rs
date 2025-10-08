@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use bit_set::BitSet;
 use std::collections::VecDeque;
 
 /// A simple graph represented as an adjacency list
@@ -27,7 +27,8 @@ impl Graph {
 /// Naive BFS implementation using Vec as a queue (intentionally slow)
 /// Returns the order in which nodes were visited
 pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
-    let mut visited = HashSet::new();
+    let mut visited = BitSet::new();
+
     let mut queue = VecDeque::new();
     let mut result = Vec::new();
 
