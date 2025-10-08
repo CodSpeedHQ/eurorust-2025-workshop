@@ -4,7 +4,7 @@ fn main() {
     divan::main();
 }
 
-#[divan::bench(sample_count = 3, sample_size = 5)]
+#[divan::bench(sample_count = 2, sample_size = 3)]
 fn dna_matcher() {
     let genome = std::fs::read_to_string("genome.fasta").expect(
         "Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'",

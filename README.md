@@ -15,8 +15,9 @@ cargo install cargo-codspeed --locked
 ### Run benchmarks locally
 
 ```sh
-# generate the genome file first
+# generate the reference files
 cargo run --release --bin generate_fasta
+cargo run --release --bin benchmark_blobs
 ```
 
 ```sh

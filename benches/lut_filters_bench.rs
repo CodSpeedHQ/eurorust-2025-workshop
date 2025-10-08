@@ -11,7 +11,7 @@ fn load_test_image() -> RgbImage {
         .to_rgb8()
 }
 
-#[divan::bench(sample_count = 3, sample_size = 5)]
+#[divan::bench(sample_count = 2, sample_size = 3)]
 fn bench_brightness_contrast(bencher: divan::Bencher) {
     let img = load_test_image();
 
@@ -24,14 +24,14 @@ fn bench_brightness_contrast(bencher: divan::Bencher) {
     });
 }
 
-#[divan::bench(sample_count = 3, sample_size = 5)]
+#[divan::bench(sample_count = 2, sample_size = 3)]
 fn bench_gamma(bencher: divan::Bencher) {
     let img = load_test_image();
 
     bencher.bench(|| apply_gamma(divan::black_box(&img), divan::black_box(2.2)));
 }
 
-#[divan::bench(sample_count = 3, sample_size = 5)]
+#[divan::bench(sample_count = 2, sample_size = 3)]
 fn bench_brightness_contrast_gamma(bencher: divan::Bencher) {
     let img = load_test_image();
 
