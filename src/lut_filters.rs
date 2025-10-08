@@ -18,11 +18,11 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
 pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
-    naive::apply_brightness_contrast(img, brightness, contrast)
+    optimized::apply_brightness_contrast(img, brightness, contrast)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
-    naive::apply_gamma(img, gamma)
+    optimized::apply_gamma(img, gamma)
 }
 
 pub fn apply_brightness_contrast_gamma(
@@ -31,10 +31,10 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    optimized::apply_brightness_contrast_gamma(img, brightness, contrast, gamma)
 }
 
+#[allow(dead_code)]
 mod naive {
     use super::*;
 
@@ -80,6 +80,78 @@ mod naive {
             let b = (pixel[2] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
 
             output.put_pixel(x, y, Rgb([r as u8, g as u8, b as u8]));
+        }
+
+        output
+    }
+}
+
+mod optimized {
+    use super::*;
+
+    /// Apply brightness and contrast with floating-point math per pixel
+    pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        let lut: [u8; 256] = std::array::from_fn(|x| {
+            (((x as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32).clamp(0.0, 255.0)
+                as u8
+        });
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
+        }
+
+        output
+    }
+
+    /// Naive implementation: Apply gamma correction
+    /// This is VERY slow because powf() is expensive!
+    pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        let lut: [u8; 256] =
+            std::array::from_fn(|x| ((x as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
+        }
+
+        output
+    }
+
+    pub fn apply_brightness_contrast_gamma(
+        img: &RgbImage,
+        brightness: i16,
+        contrast: f32,
+        gamma: f32,
+    ) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        let lut: [u8; 256] = std::array::from_fn(|x| {
+            let brightness_contrast =
+                (((x as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32)
+                    .clamp(0.0, 255.0) as u8;
+            ((brightness_contrast as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8
+        });
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
         }
 
         output

@@ -1,5 +1,5 @@
 use divan::Bencher;
-use eurorust_2025_workshop::bfs::{bfs_naive, generate_graph};
+use eurorust_2025_workshop::bfs::{bfs_optimized, generate_graph};
 
 fn main() {
     divan::main();
@@ -10,7 +10,7 @@ fn bfs_small_graph(bencher: Bencher) {
     let graph = generate_graph(100);
 
     bencher.bench_local(|| {
-        let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
+        let result = divan::black_box(bfs_optimized(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
         assert!(
@@ -28,7 +28,7 @@ fn bfs_medium_graph(bencher: Bencher) {
     let graph = generate_graph(1000);
 
     bencher.bench_local(|| {
-        let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
+        let result = divan::black_box(bfs_optimized(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
         assert!(
@@ -46,7 +46,7 @@ fn bfs_large_graph(bencher: Bencher) {
     let graph = generate_graph(10000);
 
     bencher.bench_local(|| {
-        let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
+        let result = divan::black_box(bfs_optimized(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
         assert!(
