@@ -95,14 +95,18 @@ mod naive {
         for i in 0..=255 {
             lut2[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8;
         }
+        let mut lut_combined: [u8; 256] = [0u8; 256];
+        for i in 0..=255 {
+            lut_combined[i] = lut2[lut1[i] as usize];
+        }
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
         for (x, y, pixel) in img.enumerate_pixels() {
             // powf() is VERY expensive - this is why we need a LUT!
-            let r = lut2[lut1[pixel[0] as usize] as usize];
-            let g = lut2[lut1[pixel[1] as usize] as usize];
-            let b = lut2[lut1[pixel[2] as usize] as usize];
+            let r = lut_combined[pixel[0] as usize];
+            let g = lut_combined[pixel[1] as usize];
+            let b = lut_combined[pixel[2] as usize];
 
             output.put_pixel(x, y, Rgb([r, g, b]));
         }
