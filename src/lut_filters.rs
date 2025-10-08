@@ -31,8 +31,29 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    let (width, height) = img.dimensions();
+    let mut output = ImageBuffer::new(width, height);
+
+    // precompute two lookup tables at once
+    let mut brightness_table = [0u8; 256]; // pixels are u8 (0-255)
+    let mut gamma_table = [0u8; 256]; // pixels are u8 (0-255)
+
+    for i in 0..256 {
+        brightness_table[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32)
+            .clamp(0.0, 255.0) as u8;
+        gamma_table[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0).clamp(0.0, 255.0) as u8;
+    }
+
+    // apply first the brightness/contrast, then gamma
+    for (x, y, pixel) in img.enumerate_pixels() {
+        let r = gamma_table[brightness_table[pixel[0] as usize] as usize] as u8;
+        let g = gamma_table[brightness_table[pixel[1] as usize] as usize] as u8;
+        let b = gamma_table[brightness_table[pixel[2] as usize] as usize] as u8;
+
+        output.put_pixel(x, y, Rgb([r, g, b]));
+    }
+
+    output
 }
 
 mod naive {
@@ -43,23 +64,26 @@ mod naive {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
-        for (x, y, pixel) in img.enumerate_pixels() {
-            let r = pixel[0] as f32;
-            let g = pixel[1] as f32;
-            let b = pixel[2] as f32;
+        let mut brightness_table = [0u8; 256]; // pixels are u8 (0-255)
 
-            // Apply contrast and brightness (5 FP ops per channel!)
-            let r = ((r - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let g = ((g - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let b = ((b - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
+        // Precompute brightness table
+        for i in 0..256 {
+            let toto = ((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
+            brightness_table[i] = toto.clamp(0.0, 255.0) as u8;
+        }
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = pixel[0];
+            let g = pixel[1];
+            let b = pixel[2];
 
             output.put_pixel(
                 x,
                 y,
                 Rgb([
-                    r.clamp(0.0, 255.0) as u8,
-                    g.clamp(0.0, 255.0) as u8,
-                    b.clamp(0.0, 255.0) as u8,
+                    brightness_table[r as usize],
+                    brightness_table[g as usize],
+                    brightness_table[b as usize],
                 ]),
             );
         }
@@ -67,17 +91,20 @@ mod naive {
         output
     }
 
-    /// Naive implementation: Apply gamma correction
-    /// This is VERY slow because powf() is expensive!
     pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
+        let mut gamma_table = [0u8; 256]; // pixels are u8 (0-255)
+        // Precompute gamma table
+        for i in 0..256 {
+            gamma_table[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0).clamp(0.0, 255.0) as u8;
+        }
+
         for (x, y, pixel) in img.enumerate_pixels() {
-            // powf() is VERY expensive - this is why we need a LUT!
-            let r = (pixel[0] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let g = (pixel[1] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let b = (pixel[2] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
+            let r = gamma_table[pixel[0] as usize];
+            let g = gamma_table[pixel[1] as usize];
+            let b = gamma_table[pixel[2] as usize];
 
             output.put_pixel(x, y, Rgb([r as u8, g as u8, b as u8]));
         }

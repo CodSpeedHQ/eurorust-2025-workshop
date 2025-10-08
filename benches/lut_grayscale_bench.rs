@@ -1,5 +1,5 @@
 use eurorust_2025_workshop::lut_grayscale::*;
-use image::{RgbImage};
+use image::RgbImage;
 
 fn main() {
     divan::main();

@@ -11,7 +11,7 @@ fn dna_matcher() {
     );
     let pattern = "AGTCCGTA";
 
-    let matches = divan::black_box(naive_dna_matcher(
+    let matches = divan::black_box(exported_dna_matcher(
         divan::black_box(&genome),
         divan::black_box(pattern),
     ));
