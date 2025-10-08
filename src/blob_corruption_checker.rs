@@ -11,29 +11,6 @@ pub struct Corruption {
     pub length: u64,
 }
 
-#[inline]
-fn chunks_equal(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-
-    let len = a.len();
-    let mut i = 0;
-
-    // Compare 8 bytes at a time
-    while i + 8 <= len {
-        let a_u64 = u64::from_ne_bytes(a[i..i + 8].try_into().unwrap());
-        let b_u64 = u64::from_ne_bytes(b[i..i + 8].try_into().unwrap());
-        if a_u64 != b_u64 {
-            return false;
-        }
-        i += 8;
-    }
-
-    // Compare remaining bytes
-    a[i..] == b[i..]
-}
-
 pub fn find_corruptions_sequential(
     reference_path: &str,
     corrupted_path: &str,
@@ -113,7 +90,7 @@ pub fn find_corruptions_parallel(
             let ref_chunk = &ref_mmap[offset..end];
             let corrupt_chunk = &corrupt_mmap[offset..end];
 
-            if !chunks_equal(ref_chunk, corrupt_chunk) {
+            if ref_chunk != corrupt_chunk {
                 Some(Corruption {
                     offset: offset as u64,
                     length: len as u64,
