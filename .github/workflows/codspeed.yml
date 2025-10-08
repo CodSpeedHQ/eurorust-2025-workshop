@@ -20,18 +20,19 @@ jobs:
         include:
           - runner: ubuntu-latest
             mode: instrumentation
+            bench: [hello_world, bfs]
+          - runner: codspeed-macro
+            mode: walltime
             bench:
               [
-                hello_world,
-                bfs,
+                dna_matcher,
                 lut_grayscale_bench,
                 lut_filters_bench,
                 simd_brightness_bench,
                 simd_filters_bench,
+                blob_corruption_checker,
+                blob_corruption_checker,
               ]
-          - runner: codspeed-macro
-            mode: walltime
-            bench: [dna_matcher, blob_corruption_checker]
     steps:
       - uses: actions/checkout@v4
         with:
