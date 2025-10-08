@@ -31,41 +31,11 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    naive::apply_brightness_contrast_gamma(&img, brightness, contrast, gamma)
 }
 
 mod naive {
     use super::*;
-
-    pub fn apply_pixel_filter(img: &RgbImage, filter: impl Fn(Rgb<u8>) -> Rgb<u8>) -> RgbImage {
-        let (width, height) = img.dimensions();
-        let mut output = ImageBuffer::new(width, height);
-
-        for (x, y, pixel) in img.enumerate_pixels() {
-            output.put_pixel(x, y, filter(*pixel));
-        }
-
-        output
-    }
-
-    // pub fn brightness_contrast_filter(
-    //     brightness: i16,
-    //     contrast: f32,
-    // ) -> impl Fn(Rgb<u8>) -> Rgb<u8> {
-    //     let mut lut = [0u8; 256];
-    //     for i in 0..=255 {
-    //         lut[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32) as u8;
-    //     }
-
-    //     |pixel| {
-    //         let r = lut[pixel[0] as usize];
-    //         let g = lut[pixel[1] as usize];
-    //         let b = lut[pixel[2] as usize];
-
-    //         output.put_pixel(x, y, Rgb([r, g, b]));
-    //     }
-    // }
 
     /// Apply brightness and contrast with floating-point math per pixel
     pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
@@ -102,6 +72,37 @@ mod naive {
             let r = lut[pixel[0] as usize];
             let g = lut[pixel[1] as usize];
             let b = lut[pixel[2] as usize];
+
+            output.put_pixel(x, y, Rgb([r, g, b]));
+        }
+
+        output
+    }
+
+    /// Naive implementation: Apply gamma correction
+    /// This is VERY slow because powf() is expensive!
+    pub fn apply_brightness_contrast_gamma(
+        img: &RgbImage,
+        brightness: i16,
+        contrast: f32,
+        gamma: f32,
+    ) -> RgbImage {
+        let mut lut1 = [0u8; 256];
+        for i in 0..=255 {
+            lut1[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32) as u8;
+        }
+        let mut lut2: [u8; 256] = [0u8; 256];
+        for i in 0..=255 {
+            lut2[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8;
+        }
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            // powf() is VERY expensive - this is why we need a LUT!
+            let r = lut2[lut1[pixel[0] as usize] as usize];
+            let g = lut2[lut1[pixel[1] as usize] as usize];
+            let b = lut2[lut1[pixel[2] as usize] as usize];
 
             output.put_pixel(x, y, Rgb([r, g, b]));
         }
