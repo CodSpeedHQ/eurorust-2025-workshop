@@ -1,7 +1,12 @@
 use rayon::prelude::*;
 
+
+pub fn exported_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
+    naive_dna_matcher(genome, pattern)
+}
+
 /// Naive approach: Read the entire file as a string and filter lines
-pub fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
+ fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
     genome
         .par_lines()
         .filter(|line| !line.starts_with('>')) // Skip headers
@@ -18,7 +23,7 @@ mod tests {
     fn test_naive_matcher() {
         let test_genome = ">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
         let pattern = "AGTCCGTA";
-        let matches = naive_dna_matcher(test_genome, pattern);
+        let matches = exported_dna_matcher(test_genome, pattern);
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0], "AGTCCGTAAA");
     }
@@ -30,7 +35,7 @@ mod tests {
             .expect("Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'");
         let pattern = "AGTCCGTA";
 
-        let matches = naive_dna_matcher(&genome, pattern);
+        let matches = exported_dna_matcher(&genome, pattern);
 
         // With fixed seed (42), we should always get exactly 4927 matches
         assert_eq!(
