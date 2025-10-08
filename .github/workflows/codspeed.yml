@@ -23,7 +23,7 @@ jobs:
             bench: [hello_world, bfs]
           - runner: codspeed-macro
             mode: walltime
-            bench: [dna_matcher]
+            bench: [dna_matcher, blob_corruption_checker]
     steps:
       - uses: actions/checkout@v4
       - name: Setup rust toolchain, cache and cargo-codspeed
@@ -35,6 +35,9 @@ jobs:
       - name: Generate genome.fasta for dna_matcher
         if: contains(matrix.bench, 'dna_matcher')
         run: cargo run --bin generate_fasta --release
+      - name: Generate blob files for blob_corruption_checker
+        if: contains(matrix.bench, 'blob_corruption_checker')
+        run: cargo run --bin generate_blobs --release
       - name: Build benchmark target(s)
         run: cargo codspeed build ${{ format('--bench {0}', join(matrix.bench, ' --bench ')) }}
       - name: Run the benchmarks

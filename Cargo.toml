@@ -17,6 +17,10 @@ divan = { version = "4.0.2", package = "codspeed-divan-compat" }
 name = "generate_fasta"
 path = "bin/generate_fasta.rs"
 
+[[bin]]
+name = "generate_blobs"
+path = "bin/generate_blobs.rs"
+
 [[bench]]
 name = "hello_world"
 harness = false
@@ -27,4 +31,8 @@ harness = false
 
 [[bench]]
 name = "bfs"
+harness = false
+
+[[bench]]
+name = "blob_corruption_checker"
 harness = false

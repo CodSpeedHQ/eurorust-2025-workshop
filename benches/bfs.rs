@@ -13,7 +13,10 @@ fn bfs_small_graph(bencher: Bencher) {
         let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
-        assert!(result.len() <= 100, "BFS result should not exceed graph size");
+        assert!(
+            result.len() <= 100,
+            "BFS result should not exceed graph size"
+        );
         assert_eq!(result[0], 0, "First node should be the start node");
         assert_eq!(result[10], 25, "Node at position 10 should be 25");
         assert_eq!(result[50], 53, "Node at position 50 should be 53");
@@ -28,7 +31,10 @@ fn bfs_medium_graph(bencher: Bencher) {
         let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
-        assert!(result.len() <= 1000, "BFS result should not exceed graph size");
+        assert!(
+            result.len() <= 1000,
+            "BFS result should not exceed graph size"
+        );
         assert_eq!(result[0], 0, "First node should be the start node");
         assert_eq!(result[100], 428, "Node at position 100 should be 428");
         assert_eq!(result[500], 397, "Node at position 500 should be 397");
@@ -43,7 +49,10 @@ fn bfs_large_graph(bencher: Bencher) {
         let result = divan::black_box(bfs_naive(divan::black_box(&graph), divan::black_box(0)));
 
         assert!(!result.is_empty(), "BFS result should not be empty");
-        assert!(result.len() <= 10000, "BFS result should not exceed graph size");
+        assert!(
+            result.len() <= 10000,
+            "BFS result should not exceed graph size"
+        );
         assert_eq!(result[0], 0, "First node should be the start node");
         assert_eq!(result[1000], 7575, "Node at position 1000 should be 7575");
         assert_eq!(result[2500], 5949, "Node at position 2500 should be 5949");
