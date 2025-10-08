@@ -15,6 +15,9 @@ image-compare = "0.5.0"
 [dev-dependencies]
 divan = { version = "4.0.2", package = "codspeed-divan-compat" }
 
+[profile.bench]
+debug = true
+
 [[bin]]
 name = "generate_fasta"
 path = "bin/generate_fasta.rs"
