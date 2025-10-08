@@ -38,6 +38,35 @@ pub fn apply_brightness_contrast_gamma(
 mod naive {
     use super::*;
 
+    pub fn apply_pixel_filter(img: &RgbImage, filter: impl Fn(Rgb<u8>) -> Rgb<u8>) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            output.put_pixel(x, y, filter(*pixel));
+        }
+
+        output
+    }
+
+    // pub fn brightness_contrast_filter(
+    //     brightness: i16,
+    //     contrast: f32,
+    // ) -> impl Fn(Rgb<u8>) -> Rgb<u8> {
+    //     let mut lut = [0u8; 256];
+    //     for i in 0..=255 {
+    //         lut[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32) as u8;
+    //     }
+
+    //     |pixel| {
+    //         let r = lut[pixel[0] as usize];
+    //         let g = lut[pixel[1] as usize];
+    //         let b = lut[pixel[2] as usize];
+
+    //         output.put_pixel(x, y, Rgb([r, g, b]));
+    //     }
+    // }
+
     /// Apply brightness and contrast with floating-point math per pixel
     pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
         let mut lut = [0u8; 256];
@@ -49,8 +78,8 @@ mod naive {
 
         for (x, y, pixel) in img.enumerate_pixels() {
             let r = lut[pixel[0] as usize];
-            let g = lut[pixel[0] as usize];
-            let b = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
 
             output.put_pixel(x, y, Rgb([r, g, b]));
         }
