@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 /// A simple graph represented as an adjacency list
 #[derive(Debug, Clone)]
@@ -42,6 +42,29 @@ pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
             for &neighbor in neighbors {
                 if visited.insert(neighbor) {
                     queue.push(neighbor);
+                }
+            }
+        }
+    }
+
+    result
+}
+
+pub fn bfs_optimized(graph: &Graph, start: usize) -> Vec<usize> {
+    let mut visited = HashSet::new();
+    let mut queue = VecDeque::new();
+    let mut result = Vec::new();
+
+    queue.push_back(start);
+    visited.insert(start);
+
+    while let Some(node) = queue.pop_front() {
+        result.push(node);
+
+        if let Some(neighbors) = graph.adjacency.get(node) {
+            for &neighbor in neighbors {
+                if visited.insert(neighbor) {
+                    queue.push_back(neighbor);
                 }
             }
         }
