@@ -27,15 +27,13 @@ impl Graph {
 /// Returns the order in which nodes were visited
 pub fn bfs_naive(graph: &Graph, start: usize) -> VecDeque<usize> {
     let mut visited = HashSet::new();
-    let mut queue = VecDeque::new(); // Using Vec instead of VecDeque - intentionally inefficient!
-    let mut result = VecDeque::new();
+    let mut queue = VecDeque::with_capacity(256); // Using Vec instead of VecDeque - intentionally inefficient!
+    let mut result = VecDeque::with_capacity(256);
 
     queue.push_back(start);
     visited.insert(start);
 
-    while !queue.is_empty() {
-        // remove(0) is O(n) - this makes BFS slow!
-        let node = queue.pop_front().unwrap();
+    while let Some(node) = queue.pop_front() {
         result.push_back(node);
 
         if let Some(neighbors) = graph.adjacency.get(node) {
