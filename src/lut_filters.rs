@@ -42,24 +42,28 @@ mod naive {
     pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
+        let mut c_table: [u8; 256] = [0; 256];
+        
+
+        for i in 0..256 {
+            let f = i as f32;
+            c_table[i] = (((f - 128.0) * (1.0 + contrast)) + 128.0 + (brightness as f32)).clamp(0.0, 255.0) as u8;
+        }
+
+
 
         for (x, y, pixel) in img.enumerate_pixels() {
             let r = pixel[0] as f32;
             let g = pixel[1] as f32;
             let b = pixel[2] as f32;
 
-            // Apply contrast and brightness (5 FP ops per channel!)
-            let r = ((r - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let g = ((g - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let b = ((b - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-
             output.put_pixel(
                 x,
                 y,
                 Rgb([
-                    r.clamp(0.0, 255.0) as u8,
-                    g.clamp(0.0, 255.0) as u8,
-                    b.clamp(0.0, 255.0) as u8,
+                    c_table[r as usize],
+                    c_table[g as usize],
+                    c_table[b as usize],
                 ]),
             );
         }
