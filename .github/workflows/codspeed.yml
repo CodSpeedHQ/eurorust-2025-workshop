@@ -20,7 +20,15 @@ jobs:
         include:
           - runner: ubuntu-latest
             mode: instrumentation
-            bench: [hello_world, bfs, lut_grayscale_bench, lut_filters_bench]
+            bench:
+              [
+                hello_world,
+                bfs,
+                lut_grayscale_bench,
+                lut_filters_bench,
+                simd_brightness_bench,
+                simd_filters_bench,
+              ]
           - runner: codspeed-macro
             mode: walltime
             bench: [dna_matcher, blob_corruption_checker]
@@ -28,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      
+
       - name: Setup rust toolchain, cache and cargo-codspeed
         uses: moonrepo/setup-rust@v1
         with:
