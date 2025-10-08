@@ -61,16 +61,20 @@ mod naive {
     /// Naive implementation: Apply gamma correction
     /// This is VERY slow because powf() is expensive!
     pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
+        let mut lut = [0u8; 256];
+        for i in 0..=255 {
+            lut[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0) as u8;
+        }
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
         for (x, y, pixel) in img.enumerate_pixels() {
             // powf() is VERY expensive - this is why we need a LUT!
-            let r = (pixel[0] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let g = (pixel[1] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
-            let b = (pixel[2] as f32 / 255.0).powf(1.0 / gamma) * 255.0;
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
 
-            output.put_pixel(x, y, Rgb([r as u8, g as u8, b as u8]));
+            output.put_pixel(x, y, Rgb([r, g, b]));
         }
 
         output
