@@ -21,5 +21,7 @@ cargo run --release --bin generate_fasta
 
 ```sh
 cargo codspeed build -m walltime
-cargo codspeed run
+cargo codspeed run -m walltime
 ```
+
+Note: You can also set the `CODSPEED_RUNNER_MODE` environment variable to `walltime` to avoid passing `-m walltime` every time.

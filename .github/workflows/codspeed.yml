@@ -20,7 +20,7 @@ jobs:
         include:
           - runner: ubuntu-latest
             mode: instrumentation
-            bench: [hello_world]
+            bench: [hello_world, bfs]
           - runner: codspeed-macro
             mode: walltime
             bench: [dna_matcher]

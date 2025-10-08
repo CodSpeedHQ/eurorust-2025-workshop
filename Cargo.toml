@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "dna_matcher"
 harness = false
+
+[[bench]]
+name = "bfs"
+harness = false

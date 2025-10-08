@@ -1,7 +1,7 @@
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use rand::{Rng, SeedableRng};
-use rand::rngs::StdRng;
 
 fn main() -> std::io::Result<()> {
     // Use a fixed seed to ensure reproducibility
@@ -54,6 +54,9 @@ fn main() -> std::io::Result<()> {
     }
 
     writer.flush()?;
-    println!("Generated genome.fasta (~{}MB)", current_size / (1024 * 1024));
+    println!(
+        "Generated genome.fasta (~{}MB)",
+        current_size / (1024 * 1024)
+    );
     Ok(())
 }
