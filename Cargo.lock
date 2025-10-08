@@ -428,6 +428,7 @@ dependencies = [
  "jetscii",
  "memchr",
  "rand",
+ "rayon",
 ]
 
 [[package]]

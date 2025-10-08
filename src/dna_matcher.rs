@@ -1,22 +1,60 @@
+use memchr::Memchr;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+struct ByteSplitImpl<'a> {
+    iter: Memchr<'a>,
+    slice: &'a [u8],
+    position: usize,
+    add_next: bool,
+}
+
+trait ByteSplit<'a> {
+    fn byte_split(self, separator: u8) -> ByteSplitImpl<'a>;
+}
+
+impl<'a> ByteSplit<'a> for &'a [u8] {
+    fn byte_split(self, separator: u8) -> ByteSplitImpl<'a> {
+        ByteSplitImpl {
+            iter: memchr::memchr_iter(separator, self),
+            slice: self,
+            position: 0,
+            add_next: true,
+        }
+    }
+}
+
+impl<'a> Iterator for ByteSplitImpl<'a> {
+    type Item = &'a [u8];
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(next_position) = self.iter.next() {
+            let slice = self.slice.get(self.position..next_position);
+            self.position = next_position + 1;
+            self.add_next = true;
+            return slice;
+        }
+
+        // If the iterator is consumed check if the last part of the string
+        // is missing to be added.
+        if !self.add_next {
+            None
+        } else {
+            // Use case for reading from last comma to end.
+            let slice = self.slice.get(self.position..);
+            self.position = self.slice.len();
+            self.add_next = false;
+            slice
+        }
+    }
+}
+
 /// Naive approach: Read the entire file as a string and filter lines
-pub fn naive_dna_matcher<'a>(genome: &'a str, pattern: &str) -> Vec<&'a str> {
-    let matcher = jetscii::Substring::new(pattern);
-    let n_matcher = jetscii::Substring::new("\n");
-    let mut position = 0;
-    let mut indices = vec![];
-    let indices = loop {
-        let Some(idx) = matcher.find(&genome[position..]) else {
-            // println!("done {indices:?}");
-            break indices;
-        };
-        let mut newline = memchr::Memchr::new(b'\n', genome[position..position+idx].as_bytes());
-        let start = newline.next_back().unwrap_or_default();
-        let end = n_matcher.find(&genome[position+idx..]).unwrap_or_else(|| genome.len());
-        // println!("Found match at {}-{}, idx {}, pos {}, start {}, end {}", position + start, position + end, idx, position, start, end);
-        indices.push((position + start + 1, position + idx + end));
-        position += idx + end;
-    };
-    indices.iter().map(|&(start, end)| &genome[start..end]).collect()
+pub fn naive_dna_matcher<'a>(genome: &'a [u8], pattern: &[u8]) -> Vec<&'a [u8]> {
+    let matcher = jetscii::ByteSubstring::new(pattern);
+    let lines = genome.byte_split(b'\n').collect::<Vec<_>>();
+    lines
+        .into_par_iter()
+        .filter(|b| b.len() > 1 && b[0] != b'>' && matcher.find(b).is_some())
+        .collect()
 }
 
 #[cfg(test)]
@@ -25,20 +63,20 @@ mod tests {
 
     #[test]
     fn test_naive_matcher() {
-        let test_genome = ">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
-        let pattern = "AGTCCGTA";
+        let test_genome = b">seq1\nACGTACGT\n>seq2\nAGTCCGTAAA\n>seq3\nGGGGGG";
+        let pattern = b"AGTCCGTA";
         let matches = naive_dna_matcher(test_genome, pattern);
-        // println!("{:?}", matches);
+        println!("{:?}", matches);
         assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0], "AGTCCGTAAA");
+        assert_eq!(matches[0], b"AGTCCGTAAA");
     }
 
     #[test]
     fn test_naive_matcher_on_genome_file() {
         // Read the actual genome.fasta file
-        let genome = std::fs::read_to_string("genome.fasta")
+        let genome = std::fs::read("genome.fasta")
             .expect("Failed to read genome.fasta\n\n Make sure to run 'cargo run --release --bin generate_fasta'");
-        let pattern = "AGTCCGTA";
+        let pattern = b"AGTCCGTA";
 
         let matches = naive_dna_matcher(&genome, pattern);
         // println!("{:?}", matches);
@@ -52,7 +90,7 @@ mod tests {
         );
 
         println!(
-            "✓ Found {} sequences containing pattern '{}'",
+            "✓ Found {} sequences containing pattern '{:?}'",
             matches.len(),
             pattern
         );
