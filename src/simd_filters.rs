@@ -72,7 +72,7 @@ mod naive {
 mod optimized {
     use super::*;
 
-    use std::simd::num::SimdUint;
+    use std::simd::num::{SimdFloat, SimdUint};
     use std::simd::{Simd, u8x16, usizex16};
 
     pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
@@ -81,7 +81,33 @@ mod optimized {
                 as u8
         });
 
-        apply_lut(img, &lut)
+        let (width, height) = img.dimensions();
+
+        let input = img.as_raw();
+        let mut output = vec![0u8; input.len()];
+
+        // Process LANES bytes at a time
+        const LANES: usize = 8;
+
+        let chunks = input.chunks_exact(LANES);
+        let remainder = chunks.remainder();
+
+        for (i, chunk) in chunks.enumerate() {
+            let pixels: Simd<u8, LANES> = Simd::from_slice(chunk);
+            let pixels: Simd<f32, LANES> = pixels.cast();
+            let adjusted = (pixels - Simd::splat(128.0)) * Simd::splat(1.0 + contrast)
+                + Simd::splat(128.0 + brightness as f32);
+            let clamped = adjusted.simd_clamp(Simd::splat(0.0), Simd::splat(255.0));
+            let result: Simd<u8, LANES> = clamped.cast();
+            result.copy_to_slice(&mut output[i * LANES..(i + 1) * LANES]);
+        }
+
+        // Handle remaining bytes
+        for (i, &byte) in remainder.iter().enumerate() {
+            output[input.len() - remainder.len() + i] = lut[byte as usize];
+        }
+
+        ImageBuffer::from_raw(width, height, output).unwrap()
     }
 
     pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
