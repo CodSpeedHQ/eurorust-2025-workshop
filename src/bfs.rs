@@ -1,3 +1,4 @@
+use bit_set::BitSet;
 use std::collections::{HashSet, VecDeque};
 
 /// A simple graph represented as an adjacency list
@@ -51,7 +52,7 @@ pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
 }
 
 pub fn bfs_optimized(graph: &Graph, start: usize) -> Vec<usize> {
-    let mut visited = HashSet::new();
+    let mut visited = BitSet::new();
     let mut queue = VecDeque::new();
     let mut result = Vec::new();
 
