@@ -53,30 +53,19 @@ mod naive {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
-        let mut lut: [f32; 256] = [0.0; 256];
+        let mut lut: [u8; 256] = [0; 256];
         for i in 0..256 {
-            lut[i] = (LUT1[i] * (1.0 + contrast)) + 128.0 + brightness as f32
+            lut[i] =
+                ((LUT1[i] * (1.0 + contrast)) + 128.0 + brightness as f32).clamp(0.0, 255.0) as u8
         }
 
         for (x, y, pixel) in img.enumerate_pixels() {
-            let r = pixel[0];
-            let g = pixel[1];
-            let b = pixel[2];
-
             // Apply contrast and brightness (5 FP ops per channel!)
-            let r = lut[r as usize];
-            let g = lut[g as usize];
-            let b = lut[b as usize];
+            let r = lut[pixel[0] as usize];
+            let g = lut[pixel[1] as usize];
+            let b = lut[pixel[2] as usize];
 
-            output.put_pixel(
-                x,
-                y,
-                Rgb([
-                    r.clamp(0.0, 255.0) as u8,
-                    g.clamp(0.0, 255.0) as u8,
-                    b.clamp(0.0, 255.0) as u8,
-                ]),
-            );
+            output.put_pixel(x, y, Rgb([r, g, b]));
         }
 
         output
@@ -98,9 +87,9 @@ mod naive {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
-        let mut lut: [f32; 256] = [0.0; 256];
+        let mut lut: [u8; 256] = [0; 256];
         for i in 0..256 {
-            lut[i] = LUT2[i].powf(1.0 / gamma) * 255.0;
+            lut[i] = (LUT2[i].powf(1.0 / gamma) * 255.0) as u8;
         }
 
         for (x, y, pixel) in img.enumerate_pixels() {
@@ -109,7 +98,7 @@ mod naive {
             let g = lut[pixel[1] as usize];
             let b = lut[pixel[2] as usize];
 
-            output.put_pixel(x, y, Rgb([r as u8, g as u8, b as u8]));
+            output.put_pixel(x, y, Rgb([r, g, b]));
         }
 
         output
