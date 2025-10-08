@@ -38,20 +38,30 @@ pub fn apply_brightness_contrast_gamma(
 mod naive {
     use super::*;
 
+    const LUT1: [f32; 256] = {
+        let mut data = [0.0; 256];
+        let mut i = 0;
+        while i < 256 {
+            data[i] = i as f32 - 128.0;
+            i += 1;
+        }
+        data
+    };
+
     /// Apply brightness and contrast with floating-point math per pixel
     pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
         let (width, height) = img.dimensions();
         let mut output = ImageBuffer::new(width, height);
 
         for (x, y, pixel) in img.enumerate_pixels() {
-            let r = pixel[0] as f32;
-            let g = pixel[1] as f32;
-            let b = pixel[2] as f32;
+            let r = pixel[0];
+            let g = pixel[1];
+            let b = pixel[2];
 
             // Apply contrast and brightness (5 FP ops per channel!)
-            let r = ((r - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let g = ((g - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
-            let b = ((b - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32;
+            let r = (LUT1[r as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
+            let g = (LUT1[g as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
+            let b = (LUT1[b as usize] * (1.0 + contrast)) + 128.0 + brightness as f32;
 
             output.put_pixel(
                 x,
