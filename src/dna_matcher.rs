@@ -1,10 +1,15 @@
+use jetscii::ByteSubstring;
+use rayon::prelude::*;
+
 /// Naive approach: Read the entire file as a string and filter lines
-pub fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
+pub fn naive_dna_matcher<'a>(genome: &'a str, pattern: &str) -> Vec<&'a str> {
+    let searcher = ByteSubstring::new(pattern.as_bytes());
     genome
-        .lines()
-        .filter(|line| !line.starts_with('>')) // Skip headers
-        .filter(|line| line.contains(pattern))
-        .map(|s| s.to_string())
+        .as_bytes()
+        .par_split(|c| *c == b'\n')
+        .filter(|line| !line.starts_with(b">")) // Skip headers
+        .filter(|line| searcher.find(line).is_some())
+        .map(|s| unsafe { std::str::from_utf8_unchecked(s) })
         .collect()
 }
 
