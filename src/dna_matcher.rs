@@ -1,5 +1,3 @@
-use itertools::*;
-
 pub fn dna_matcher_api(genome: &str, pattern: &str) -> Vec<String> {
     optimized_dna_matcher_impl(genome, pattern)
 }
@@ -15,7 +13,10 @@ fn naive_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
         .collect()
 }
 
-fn optimized_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
+#[allow(dead_code)]
+fn itertools_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
+    use itertools::*;
+
     std::iter::once(usize::MAX)
         .chain(genome.as_bytes().iter().positions(|&c| c == b'\n'))
         .chain(std::iter::once(genome.len()))
@@ -32,6 +33,17 @@ fn optimized_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
                 Some(line)
             }
         })
+        .filter(|line| line.contains(pattern))
+        .map(|s| s.to_string())
+        .collect()
+}
+
+fn optimized_dna_matcher_impl(genome: &str, pattern: &str) -> Vec<String> {
+    use rayon::prelude::*;
+
+    genome
+        .par_lines()
+        .filter(|line| !line.starts_with('>')) // Skip headers
         .filter(|line| line.contains(pattern))
         .map(|s| s.to_string())
         .collect()
