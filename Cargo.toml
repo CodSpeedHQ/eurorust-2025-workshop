@@ -46,3 +46,11 @@ harness = false
 [[bench]]
 name = "lut_filters_bench"
 harness = false
+
+[[bench]]
+name = "simd_brightness_bench"
+harness = false
+
+[[bench]]
+name = "simd_filters_bench"
+harness = false
