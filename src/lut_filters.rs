@@ -18,7 +18,7 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
 pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
-    naive::apply_brightness_contrast(img, brightness, contrast)
+    saul::apply_brightness_contrast(img, brightness, contrast)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
@@ -33,6 +33,49 @@ pub fn apply_brightness_contrast_gamma(
 ) -> RgbImage {
     let temp_img = apply_brightness_contrast(img, brightness, contrast);
     naive::apply_gamma(&temp_img, gamma)
+}
+
+mod saul {
+    use super::*;
+
+    fn create_lut(contrast: f32) -> [f32; 256] {
+        let mut ret = [0.0; 256];
+        for r in 0..=u8::MAX {
+            let r_float = r as f32;
+            ret[r as usize] = ((r_float - 128.0) * (1.0 + contrast)) + 128.0;
+        }
+        ret
+    }
+
+    /// Apply brightness and contrast with floating-point math per pixel
+    pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
+        let (width, height) = img.dimensions();
+        let mut output = ImageBuffer::new(width, height);
+        let lut = create_lut(contrast);
+
+        for (x, y, pixel) in img.enumerate_pixels() {
+            let r = pixel[0] as usize;
+            let g = pixel[1] as usize;
+            let b = pixel[2] as usize;
+
+            // Apply contrast and brightness (5 FP ops per channel!)
+            let r = lut[r] + brightness as f32;
+            let g = lut[g] + brightness as f32;
+            let b = lut[b] + brightness as f32;
+
+            output.put_pixel(
+                x,
+                y,
+                Rgb([
+                    r.clamp(0.0, 255.0) as u8,
+                    g.clamp(0.0, 255.0) as u8,
+                    b.clamp(0.0, 255.0) as u8,
+                ]),
+            );
+        }
+
+        output
+    }
 }
 
 mod naive {
