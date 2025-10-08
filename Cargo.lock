@@ -424,6 +424,7 @@ dependencies = [
  "codspeed-divan-compat",
  "image",
  "image-compare",
+ "memchr",
  "memmap2",
  "rand",
  "rayon",
