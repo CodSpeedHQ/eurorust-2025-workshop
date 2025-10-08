@@ -17,12 +17,54 @@
 /// - Learn when LUTs are appropriate
 use image::{ImageBuffer, Rgb, RgbImage};
 
+fn build_brightness_contrast_lut(brightness: i16, contrast: f32) -> [u8; 256] {
+    let mut lut = [0u8; 256];
+    let contrast_factor = 1.0 + contrast;
+
+    for v in 0..=255 {
+        let value = v as f32;
+        let adjusted = ((value - 128.0) * contrast_factor) + 128.0 + brightness as f32;
+        let clamped = adjusted.clamp(0.0, 255.0);
+        lut[v as usize] = clamped as u8;
+    }
+
+    lut
+}
+
+fn build_gamma_lut(gamma: f32) -> [u8; 256] {
+    let mut lut = [0u8; 256];
+    let inv_gamma = 1.0 / gamma;
+
+    for v in 0..=255 {
+        let normalized = v as f32 / 255.0;
+        let corrected = normalized.powf(inv_gamma) * 255.0;
+        // Match naive behavior: cast to u8 without rounding
+        lut[v as usize] = corrected as u8;
+    }
+
+    lut
+}
+
+fn apply_lut_rgb(img: &RgbImage, lut: &[u8; 256]) -> RgbImage {
+    let (width, height) = img.dimensions();
+    let src = img.as_raw();
+    let mut dst = vec![0u8; src.len()];
+
+    for (d, s) in dst.iter_mut().zip(src.iter()) {
+        *d = lut[*s as usize];
+    }
+
+    ImageBuffer::from_raw(width, height, dst).expect("buffer size must match")
+}
+
 pub fn apply_brightness_contrast(img: &RgbImage, brightness: i16, contrast: f32) -> RgbImage {
-    naive::apply_brightness_contrast(img, brightness, contrast)
+    let lut = build_brightness_contrast_lut(brightness, contrast);
+    apply_lut_rgb(img, &lut)
 }
 
 pub fn apply_gamma(img: &RgbImage, gamma: f32) -> RgbImage {
-    naive::apply_gamma(img, gamma)
+    let lut = build_gamma_lut(gamma);
+    apply_lut_rgb(img, &lut)
 }
 
 pub fn apply_brightness_contrast_gamma(
@@ -31,8 +73,17 @@ pub fn apply_brightness_contrast_gamma(
     contrast: f32,
     gamma: f32,
 ) -> RgbImage {
-    let temp_img = apply_brightness_contrast(img, brightness, contrast);
-    naive::apply_gamma(&temp_img, gamma)
+    let bc_lut = build_brightness_contrast_lut(brightness, contrast);
+    let gamma_lut = build_gamma_lut(gamma);
+
+    // Compose LUTs to do both in a single pass: gamma(bc(value))
+    let mut combined_lut = [0u8; 256];
+    for v in 0..=255 {
+        let bc = bc_lut[v as usize] as usize;
+        combined_lut[v as usize] = gamma_lut[bc];
+    }
+
+    apply_lut_rgb(img, &combined_lut)
 }
 
 mod naive {
