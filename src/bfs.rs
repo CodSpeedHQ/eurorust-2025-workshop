@@ -1,4 +1,6 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{VecDeque};
+
+use fnv::FnvHashSet;
 
 /// A simple graph represented as an adjacency list
 #[derive(Debug, Clone)]
@@ -26,7 +28,7 @@ impl Graph {
 /// Naive BFS implementation using VecDeque as a queue
 /// Returns the order in which nodes were visited
 pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
-    let mut visited = HashSet::new();
+    let mut visited = FnvHashSet::with_capacity_and_hasher(graph.num_nodes(), Default::default());
     let mut queue = VecDeque::new();
     let mut result = Vec::with_capacity(graph.num_nodes());
 
