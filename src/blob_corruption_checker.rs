@@ -14,8 +14,9 @@ pub fn find_corruptions_sequential(
     corrupted_path: &str,
     chunk_size: usize,
 ) -> Vec<Corruption> {
-    let mut ref_file = BufReader::new(File::open(reference_path).unwrap());
-    let mut corrupt_file = BufReader::new(File::open(corrupted_path).unwrap());
+    let mut ref_file = BufReader::with_capacity(1024 * 1024, File::open(reference_path).unwrap());
+    let mut corrupt_file =
+        BufReader::with_capacity(1024 * 1024, File::open(corrupted_path).unwrap());
 
     let mut ref_buffer = vec![0u8; chunk_size];
     let mut corrupt_buffer = vec![0u8; chunk_size];
@@ -92,10 +93,7 @@ mod tests {
             "Middle corruption offset"
         );
         assert_eq!(corruptions[25].length, 4096, "Middle corruption length");
-        assert_eq!(
-            corruptions[49].offset, 507871232,
-            "Last corruption offset"
-        );
+        assert_eq!(corruptions[49].offset, 507871232, "Last corruption offset");
         assert_eq!(corruptions[49].length, 5120, "Last corruption length");
     }
 }
