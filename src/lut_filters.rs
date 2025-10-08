@@ -39,7 +39,8 @@ pub fn apply_brightness_contrast_gamma(
     let mut gamma_table = [0u8; 256]; // pixels are u8 (0-255)
 
     for i in 0..256 {
-        brightness_table[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32).clamp(0.0, 255.0) as u8;
+        brightness_table[i] = (((i as f32 - 128.0) * (1.0 + contrast)) + 128.0 + brightness as f32)
+            .clamp(0.0, 255.0) as u8;
         gamma_table[i] = ((i as f32 / 255.0).powf(1.0 / gamma) * 255.0).clamp(0.0, 255.0) as u8;
     }
 

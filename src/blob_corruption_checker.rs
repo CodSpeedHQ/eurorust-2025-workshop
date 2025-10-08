@@ -1,3 +1,5 @@
+use memmap2::Mmap;
+use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
@@ -60,6 +62,69 @@ pub fn find_corruptions_sequential(
     corruptions
 }
 
+pub fn find_corruptions_parallel(
+    reference_path: &str,
+    corrupted_path: &str,
+    chunk_size: usize,
+) -> Vec<Corruption> {
+    // Memory map both files
+    let ref_file = File::open(reference_path).unwrap();
+    let corrupt_file = File::open(corrupted_path).unwrap();
+
+    // it is fine to use unsafe here since the files are not modified while mapped
+    let ref_mmap = unsafe { Mmap::map(&ref_file).unwrap() };
+    let corrupt_mmap = unsafe { Mmap::map(&corrupt_file).unwrap() };
+
+    let file_size = ref_mmap.len();
+
+    // Divide the file into chunks and process in parallel
+    let num_chunks = (file_size + chunk_size - 1) / chunk_size;
+
+    let mut all_corruptions: Vec<Corruption> = (0..num_chunks)
+        .into_par_iter()
+        .filter_map(|chunk_idx| {
+            let offset = chunk_idx * chunk_size;
+            let end = std::cmp::min(offset + chunk_size, file_size);
+            let len = end - offset;
+
+            let ref_chunk = &ref_mmap[offset..end];
+            let corrupt_chunk = &corrupt_mmap[offset..end];
+
+            if ref_chunk != corrupt_chunk {
+                Some(Corruption {
+                    offset: offset as u64,
+                    length: len as u64,
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // Merge consecutive corruptions
+    if all_corruptions.is_empty() {
+        return all_corruptions;
+    }
+
+    // Sort by offset (should already be sorted, but ensure it)
+    all_corruptions.sort_by_key(|c| c.offset);
+
+    let mut merged: Vec<Corruption> = Vec::new();
+    merged.push(all_corruptions[0].clone());
+
+    for corruption in all_corruptions.into_iter().skip(1) {
+        let last = merged.last_mut().unwrap();
+        if last.offset + last.length == corruption.offset {
+            // Merge consecutive corruptions
+            last.length += corruption.length;
+        } else {
+            merged.push(corruption);
+        }
+    }
+
+    merged
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,6 +132,38 @@ mod tests {
     #[test]
     fn test_find_corruptions_sequential() {
         let corruptions = find_corruptions_sequential("reference.bin", "corrupted.bin", 1024);
+
+        assert_eq!(corruptions.len(), 50, "Should find 50 corruptions");
+
+        // All corruptions should be 1KB aligned
+        for corruption in &corruptions {
+            assert_eq!(
+                corruption.offset % 1024,
+                0,
+                "Corruption offset should be 1KB aligned"
+            );
+            assert_eq!(
+                corruption.length % 1024,
+                0,
+                "Corruption length should be multiple of 1KB"
+            );
+        }
+
+        // Check specific corruptions
+        assert_eq!(corruptions[0].offset, 14801920, "First corruption offset");
+        assert_eq!(corruptions[0].length, 2048, "First corruption length");
+        assert_eq!(
+            corruptions[25].offset, 243891200,
+            "Middle corruption offset"
+        );
+        assert_eq!(corruptions[25].length, 4096, "Middle corruption length");
+        assert_eq!(corruptions[49].offset, 507871232, "Last corruption offset");
+        assert_eq!(corruptions[49].length, 5120, "Last corruption length");
+    }
+
+    #[test]
+    fn test_find_corruptions_parallel() {
+        let corruptions = find_corruptions_parallel("reference.bin", "corrupted.bin", 1024);
 
         assert_eq!(corruptions.len(), 50, "Should find 50 corruptions");
 

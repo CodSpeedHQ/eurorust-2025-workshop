@@ -1,5 +1,5 @@
 use divan::Bencher;
-use eurorust_2025_workshop::blob_corruption_checker::find_corruptions_sequential;
+use eurorust_2025_workshop::blob_corruption_checker::find_corruptions_parallel;
 
 fn main() {
     divan::main();
@@ -8,7 +8,7 @@ fn main() {
 #[divan::bench(sample_count = 3, sample_size = 5)]
 fn corruption_check(bencher: Bencher) {
     bencher.bench_local(|| {
-        let corruptions = divan::black_box(find_corruptions_sequential(
+        let corruptions = divan::black_box(find_corruptions_parallel(
             "reference.bin",
             "corrupted.bin",
             1024, // 1KB chunks
