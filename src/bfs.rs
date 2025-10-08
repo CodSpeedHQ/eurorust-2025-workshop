@@ -30,6 +30,10 @@ pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
     let mut queue = VecDeque::new(); // Using Vec instead of VecDeque - intentionally inefficient!
     let mut result = Vec::new();
 
+    queue.reserve(graph.num_nodes());
+    result.reserve(graph.num_nodes());
+    visited.reserve(graph.num_nodes());
+
     queue.push_back(start);
     visited.insert(start);
 
