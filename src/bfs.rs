@@ -1,3 +1,4 @@
+use core::hash::{BuildHasherDefault, Hasher};
 use std::collections::{HashSet, VecDeque};
 
 /// A simple graph represented as an adjacency list
@@ -23,10 +24,54 @@ impl Graph {
     }
 }
 
+pub(crate) type BuildNoHashHasher = BuildHasherDefault<NoHashHasher>;
+
+#[derive(Default)]
+pub(crate) struct NoHashHasher(u64);
+
+impl Hasher for NoHashHasher {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+    fn write(&mut self, _: &[u8]) {
+        unreachable!("Should not be used")
+    }
+    fn write_u8(&mut self, _: u8) {
+        unreachable!("Should not be used")
+    }
+    fn write_u16(&mut self, _: u16) {
+        unreachable!("Should not be used")
+    }
+    fn write_u32(&mut self, _: u32) {
+        unreachable!("Should not be used")
+    }
+    fn write_u64(&mut self, _: u64) {
+        unreachable!("Should not be used")
+    }
+    fn write_usize(&mut self, n: usize) {
+        self.0 = n as u64;
+    }
+    fn write_i8(&mut self, _: i8) {
+        unreachable!("Should not be used")
+    }
+    fn write_i16(&mut self, _: i16) {
+        unreachable!("Should not be used")
+    }
+    fn write_i32(&mut self, _: i32) {
+        unreachable!("Should not be used")
+    }
+    fn write_i64(&mut self, _: i64) {
+        unreachable!("Should not be used")
+    }
+    fn write_isize(&mut self, _: isize) {
+        unreachable!("Should not be used")
+    }
+}
+
 /// Naive BFS implementation using Vec as a queue (intentionally slow)
 /// Returns the order in which nodes were visited
 pub fn bfs_naive(graph: &Graph, start: usize) -> Vec<usize> {
-    let mut visited = HashSet::new();
+    let mut visited = HashSet::with_capacity_and_hasher(1024, BuildNoHashHasher::new());
     let mut queue = VecDeque::new(); // Using Vec instead of VecDeque - intentionally inefficient!
     let mut result = Vec::new();
 
