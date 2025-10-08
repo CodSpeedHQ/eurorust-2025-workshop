@@ -1,7 +1,9 @@
+use rayon::prelude::*;
+
 /// Naive approach: Read the entire file as a string and filter lines
 pub fn naive_dna_matcher(genome: &str, pattern: &str) -> Vec<String> {
     genome
-        .lines()
+        .par_lines()
         .filter(|line| !line.starts_with('>')) // Skip headers
         .filter(|line| line.contains(pattern))
         .map(|s| s.to_string())
