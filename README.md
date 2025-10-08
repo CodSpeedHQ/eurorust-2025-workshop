@@ -20,6 +20,14 @@ cargo run --release --bin generate_fasta
 cargo run --release --bin benchmark_blobs
 ```
 
+Running with `divan`:
+
+```sh
+cargo bench --bench bfs # here we are only running the bfs benchmark
+```
+
+Running the benchmarks with `cargo-codspeed`:
+
 ```sh
 cargo codspeed build -m walltime
 cargo codspeed run -m walltime
